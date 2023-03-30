@@ -6,10 +6,12 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import ru.vitasoft.testWork.model.request.Request;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import java.util.Collection;
+import java.util.List;
 
 @Setter
 @Getter
@@ -31,8 +33,11 @@ public class User implements UserDetails {
     @NotBlank
     private String username;
 
-//    @Enumerated(EnumType.STRING)
-//    private Role role; //TODO enum, может быть нулл?
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    List<Request> requests;
+
+    @Enumerated(EnumType.STRING)
+    private Role role; //TODO может быть нулл?
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

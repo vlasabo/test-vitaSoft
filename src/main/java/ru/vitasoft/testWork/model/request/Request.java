@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import ru.vitasoft.testWork.model.user.User;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
@@ -23,16 +24,21 @@ public class Request {
     @Column(name = "id")
     private Long id;
 
-    //    @NotBlank
-    //    @Enumerated(EnumType.STRING)
-    //    private Status status; //TODO enum
+    @NotBlank
+    @Enumerated(EnumType.STRING)
+    private RequestStatus status;
 
-    @Column(name = "id")
+    @Column(name = "text")
     @NotBlank
     private String text;
 
-    @Column(name = "creationDate")
+    @Column(name = "creation_date")
     @NotBlank
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime creationDate;
+
+    //@Column(name = "user_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
 }
