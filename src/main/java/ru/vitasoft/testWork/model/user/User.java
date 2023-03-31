@@ -36,8 +36,11 @@ public class User implements UserDetails {
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     List<Request> requests;
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "roles", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "role")
     @Enumerated(EnumType.STRING)
-    private Role role; //TODO может быть нулл?
+    private List<Role> role;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
