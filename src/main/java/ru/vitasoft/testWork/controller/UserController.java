@@ -36,5 +36,6 @@ public class UserController {
     public void sendToSubmit(@PathVariable Long requestId,
                              @AuthenticationPrincipal User user) {
         log.debug("sending request №{} to submit", requestId);
+        requestService.sendToSubmit(requestId, user.getUsername());
     }
 }

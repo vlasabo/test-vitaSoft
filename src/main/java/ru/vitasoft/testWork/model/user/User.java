@@ -12,6 +12,7 @@ import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 @Setter
 @Getter
@@ -77,4 +78,19 @@ public class User implements UserDetails {
         return true;
     }
 
+
+    @Override
+    public int hashCode() {
+        int prime = 31;
+        return prime * Objects.hash(username, id);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return Objects.equals(id, user.id) &&
+                Objects.equals(username, user.username);
+    }
 }
