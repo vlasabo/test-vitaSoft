@@ -1,8 +1,8 @@
 package ru.vitasoft.testWork.model.request;
 
-import lombok.AllArgsConstructor;
 
-@AllArgsConstructor
+import lombok.Getter;
+
 public enum RequestStatus {
 
     DRAFT("Черновик"),
@@ -10,6 +10,11 @@ public enum RequestStatus {
     ACCEPTED("Принято"),
     REJECTED("Отклонено");
 
+    @Getter
     private final String statusName;
+
+    RequestStatus(String statusName) {
+        this.statusName = statusName;
+    }
 
 }
