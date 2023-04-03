@@ -13,6 +13,7 @@ import javax.validation.constraints.NotBlank;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 @Setter
 @Getter
@@ -41,7 +42,7 @@ public class User implements UserDetails {
     @CollectionTable(name = "roles", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "role")
     @Enumerated(EnumType.STRING)
-    private List<Role> role;
+    private Set<Role> role;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

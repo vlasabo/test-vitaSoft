@@ -2,10 +2,12 @@ package ru.vitasoft.testWork.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import ru.vitasoft.testWork.model.user.Role;
 import ru.vitasoft.testWork.model.user.User;
 import ru.vitasoft.testWork.repository.UserRepository;
 
 import java.util.List;
+import java.util.Set;
 
 @RequiredArgsConstructor
 @Service
@@ -18,5 +20,16 @@ public class UserService {
 
     public List<User> findUserByPartOfUsername(String username) {
         return userRepository.findAllByUsernameContainingIgnoreCase(username);
+    }
+
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
+    public User setRoleToUser(Long userId, Role role) {
+        User user = userRepository.findById(userId).orElseThrow();
+        Set<Role> roles = user.getRole();
+        roles.add(role);
+        return userRepository.save(user);
     }
 }
