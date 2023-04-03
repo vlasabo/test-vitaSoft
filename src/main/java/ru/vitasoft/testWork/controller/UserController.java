@@ -2,6 +2,7 @@ package ru.vitasoft.testWork.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.User;
@@ -11,6 +12,7 @@ import ru.vitasoft.testWork.dto.request.RequestDtoOut;
 import ru.vitasoft.testWork.service.RequestService;
 
 import javax.validation.Valid;
+import javax.validation.constraints.PositiveOrZero;
 
 
 @RestController
@@ -43,8 +45,19 @@ public class UserController {
     //@PreAuthorize()
     @ResponseStatus(HttpStatus.OK)
     public RequestDtoOut editRequest(@Valid @RequestBody RequestDtoIn request,
-                                     @AuthenticationPrincipal User user, @PathVariable Long requestId) {
+                                     @PathVariable Long requestId,
+                                     @AuthenticationPrincipal User user) {
         log.debug("edit request №{}", requestId);
         return requestService.editRequest(request, requestId, user.getUsername());
+    }
+
+    @GetMapping("/all")
+    //@PreAuthorize()
+    @ResponseStatus(HttpStatus.OK)
+    public Page<RequestDtoOut> getUserRequests(@RequestParam(defaultValue = "false") Boolean dateDirection,
+                                               @PositiveOrZero @RequestParam(required = false, defaultValue = "0") Integer paginationFrom,
+                                               @AuthenticationPrincipal User user) {
+        log.debug("get all requests for user {}", user.getUsername());
+        return requestService.getAllForUser(user.getUsername(), dateDirection, paginationFrom);
     }
 }
