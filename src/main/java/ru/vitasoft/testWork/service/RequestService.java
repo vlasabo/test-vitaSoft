@@ -17,7 +17,10 @@ import ru.vitasoft.testWork.model.user.User;
 import ru.vitasoft.testWork.repository.RequestRepository;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
+import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,6 +33,7 @@ public class RequestService {
     public RequestDtoOut addRequest(RequestDtoIn requestDto, String username) {
         requestDto.setCreationDate(LocalDateTime.now());
         requestDto.setUser(userService.findUserByUsername(username));
+        requestDto.setStatus(RequestStatus.DRAFT.toString());
         return RequestMapper.toRequestDtoOut(requestRepository.save(RequestMapper.toRequest(requestDto)));
     }
 
@@ -52,12 +56,7 @@ public class RequestService {
 
     public Page<RequestDtoOut> getAllForUser(String username, Boolean dateDirection, Integer paginationFrom) {
         Long userId = userService.findUserByUsername(username).getId();
-        Sort sort;
-        if (!dateDirection) {
-            sort = Sort.by(Sort.Direction.ASC, "creationDate");
-        } else {
-            sort = Sort.by(Sort.Direction.DESC, "creationDate");
-        }
+        Sort sort = getSort(dateDirection);
         PageRequest pageRequest = PageRequest.of(paginationFrom, PAGINATION_SIZE, sort);
         Page<Request> requestsPage = requestRepository.findAllByUserIdIs(userId, pageRequest);
 
@@ -65,6 +64,79 @@ public class RequestService {
                 .map(RequestMapper::toRequestDtoOut)
                 .collect(Collectors.toList());
         return new PageImpl<>(resultList);
+    }
+
+    public RequestDtoOut getRequest(Long requestId) {
+        Request request = requestRepository.findById(requestId).orElseThrow();
+        if (!RequestStatus.POSTED.equals(request.getStatus())) {
+            throw new UserAccessException("attempt to view a request which status is not POSTED!");
+        }
+        request.setText(setTextToOperator(request.getText()));
+        return RequestMapper.toRequestDtoOut(request);
+    }
+
+    public Page<RequestDtoOut> getAllForOperator(Boolean dateDirection, Integer paginationFrom) {
+        Sort sort = getSort(dateDirection);
+        PageRequest pageRequest = PageRequest.of(paginationFrom, PAGINATION_SIZE, sort);
+        Page<Request> requestsPage = requestRepository.findAllByStatusIs(pageRequest, RequestStatus.POSTED.toString());
+
+        List<RequestDtoOut> resultList = getRequestDtoOutsForOperator(requestsPage);
+        return new PageImpl<>(resultList);
+    }
+
+    public void changeStatus(Long requestId, RequestStatus status) {
+        Request request = requestRepository.findById(requestId).orElseThrow();
+        if (!RequestStatus.POSTED.equals(request.getStatus())) {
+            throw new RequestUpdateException(
+                    "to accept or reject a request, the status of the request must be POSTED!"
+            );
+        }
+        request.setStatus(status);
+        requestRepository.save(request);
+    }
+
+    public Page<RequestDtoOut> getAllUserRequestForOperator(Boolean dateDirection, Integer paginationFrom, String username) {
+        List<User> users = userService.findUserByPartOfUsername(username);
+        if (users.size() == 0) {
+            throw new IllegalArgumentException("zero users find by part of username " + username);
+        } else if (users.size() > 1) {
+            throw new IllegalArgumentException("too many users find by part of username " + username);
+        }
+
+        User user = users.get(0);
+        Sort sort = getSort(dateDirection);
+        PageRequest pageRequest = PageRequest.of(paginationFrom, PAGINATION_SIZE, sort);
+        Page<Request> requestsPage =
+                requestRepository.findAllByStatusIsAndUserIdIs(pageRequest, RequestStatus.POSTED.toString(), user.getId());
+
+        List<RequestDtoOut> resultList = getRequestDtoOutsForOperator(requestsPage);
+        return new PageImpl<>(resultList);
+    }
+
+    private List<RequestDtoOut> getRequestDtoOutsForOperator(Page<Request> requestsPage) {
+        var resultList = requestsPage.stream()
+                .map(RequestMapper::toRequestDtoOut)
+                .collect(Collectors.toList());
+        resultList.forEach(requestDtoOut ->
+                requestDtoOut.setText(setTextToOperator(requestDtoOut.getText())));
+        return resultList;
+    }
+
+    private Sort getSort(Boolean dateDirection) {
+        Sort sort;
+        if (!dateDirection) {
+            sort = Sort.by(Sort.Direction.ASC, "creationDate");
+        } else {
+            sort = Sort.by(Sort.Direction.DESC, "creationDate");
+        }
+        return sort;
+    }
+
+    private String setTextToOperator(String text) {
+        StringJoiner stringJoiner = new StringJoiner("-");
+        Arrays.stream(text.split(""))
+                .forEach(stringJoiner::add);
+        return stringJoiner.toString();
     }
 
     private Request updateRequest(Request requestFromBase, RequestDtoIn updatedRequest) {

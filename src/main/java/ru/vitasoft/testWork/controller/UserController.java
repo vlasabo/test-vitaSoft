@@ -32,7 +32,7 @@ public class UserController {
         return requestService.addRequest(request, user.getUsername());
     }
 
-    @PostMapping("/sendToSubmit/{requestId}")
+    @PatchMapping("/sendToSubmit/{requestId}")
     //@PreAuthorize()
     @ResponseStatus(HttpStatus.OK)
     public void sendToSubmit(@PathVariable Long requestId,
@@ -41,7 +41,7 @@ public class UserController {
         requestService.sendToSubmit(requestId, user.getUsername());
     }
 
-    @PutMapping("/edit/{requestId}")
+    @PatchMapping("/edit/{requestId}")
     //@PreAuthorize()
     @ResponseStatus(HttpStatus.OK)
     public RequestDtoOut editRequest(@Valid @RequestBody RequestDtoIn request,
