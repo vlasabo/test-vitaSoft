@@ -2,7 +2,7 @@ package ru.vitasoft.testWork.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.vitasoft.testWork.model.user.Role;
+import ru.vitasoft.testWork.model.security.Role;
 import ru.vitasoft.testWork.model.user.User;
 import ru.vitasoft.testWork.repository.UserRepository;
 

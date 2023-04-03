@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import ru.vitasoft.testWork.dto.request.RequestDtoOut;
 import ru.vitasoft.testWork.model.request.RequestStatus;
@@ -19,13 +20,13 @@ public class OperatorController {
     private final RequestService requestService;
 
     @GetMapping("/request/{requestId}")
-    //@PreAuthorize() //todo раскомментить после донастройки
+    @PreAuthorize("hasAuthority('OPERATOR')")
     public RequestDtoOut getRequest(@PathVariable Long requestId) {
         return requestService.getRequest(requestId);
     }
 
     @GetMapping("/all")
-    //@PreAuthorize()
+    @PreAuthorize("hasAuthority('OPERATOR')")
     @ResponseStatus(HttpStatus.OK)
     public Page<RequestDtoOut> getAllRequests(@RequestParam(defaultValue = "false") Boolean dateDirection,
                                               @PositiveOrZero @RequestParam(required = false, defaultValue = "0") Integer paginationFrom) {
@@ -34,7 +35,7 @@ public class OperatorController {
     }
 
     @GetMapping("/all/byUser")
-    //@PreAuthorize()
+    @PreAuthorize("hasAuthority('OPERATOR')")
     @ResponseStatus(HttpStatus.OK)
     public Page<RequestDtoOut> getUserRequests(@RequestParam(defaultValue = "false") Boolean dateDirection,
                                                @PositiveOrZero @RequestParam(required = false, defaultValue = "0") Integer paginationFrom,
@@ -44,7 +45,7 @@ public class OperatorController {
     }
 
     @PatchMapping("/accept/{requestId}")
-    //@PreAuthorize()
+    @PreAuthorize("hasAuthority('OPERATOR')")
     @ResponseStatus(HttpStatus.OK)
     public void acceptRequest(@PathVariable Long requestId) {
         log.debug("accept request №{}", requestId);
@@ -52,7 +53,7 @@ public class OperatorController {
     }
 
     @PatchMapping("/reject/{requestId}")
-    //@PreAuthorize()
+    @PreAuthorize("hasAuthority('OPERATOR')")
     @ResponseStatus(HttpStatus.OK)
     public void rejectRequest(@PathVariable Long requestId) {
         log.debug("reject request №{}", requestId);

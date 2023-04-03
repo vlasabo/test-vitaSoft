@@ -4,8 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import ru.vitasoft.testWork.dto.request.RequestDtoIn;
 import ru.vitasoft.testWork.dto.request.RequestDtoOut;
@@ -24,40 +25,40 @@ public class UserController {
     private final RequestService requestService;
 
     @PostMapping("/add")
-    //@PreAuthorize() //TODO: настроить по всему контроллеру потом
+    @PreAuthorize("hasAuthority('USER')")
     @ResponseStatus(HttpStatus.CREATED)
     public RequestDtoOut addRequest(@Valid @RequestBody RequestDtoIn request,
-                                    @AuthenticationPrincipal User user) {
+                                    @AuthenticationPrincipal UserDetails userDetails) {
         log.debug("add new request {}", request);
-        return requestService.addRequest(request, user.getUsername());
+        return requestService.addRequest(request, userDetails.getUsername());
     }
 
     @PatchMapping("/sendToSubmit/{requestId}")
-    //@PreAuthorize()
+    @PreAuthorize("hasAuthority('USER')")
     @ResponseStatus(HttpStatus.OK)
     public void sendToSubmit(@PathVariable Long requestId,
-                             @AuthenticationPrincipal User user) {
+                             @AuthenticationPrincipal UserDetails userDetails) {
         log.debug("sending request №{} to submit", requestId);
-        requestService.sendToSubmit(requestId, user.getUsername());
+        requestService.sendToSubmit(requestId, userDetails.getUsername());
     }
 
     @PatchMapping("/edit/{requestId}")
-    //@PreAuthorize()
+    @PreAuthorize("hasAuthority('USER')")
     @ResponseStatus(HttpStatus.OK)
     public RequestDtoOut editRequest(@Valid @RequestBody RequestDtoIn request,
                                      @PathVariable Long requestId,
-                                     @AuthenticationPrincipal User user) {
+                                     @AuthenticationPrincipal UserDetails userDetails) {
         log.debug("edit request №{}", requestId);
-        return requestService.editRequest(request, requestId, user.getUsername());
+        return requestService.editRequest(request, requestId, userDetails.getUsername());
     }
 
     @GetMapping("/all")
-    //@PreAuthorize()
+    @PreAuthorize("hasAuthority('USER')")
     @ResponseStatus(HttpStatus.OK)
     public Page<RequestDtoOut> getUserRequests(@RequestParam(defaultValue = "false") Boolean dateDirection,
                                                @PositiveOrZero @RequestParam(required = false, defaultValue = "0") Integer paginationFrom,
-                                               @AuthenticationPrincipal User user) {
-        log.debug("get all requests for user {}", user.getUsername());
-        return requestService.getAllForUser(user.getUsername(), dateDirection, paginationFrom);
+                                               @AuthenticationPrincipal UserDetails userDetails) {
+        log.debug("get all requests for user {}", userDetails.getUsername());
+        return requestService.getAllForUser(userDetails.getUsername(), dateDirection, paginationFrom);
     }
 }

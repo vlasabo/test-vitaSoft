@@ -5,15 +5,14 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import ru.vitasoft.testWork.model.request.Request;
+import ru.vitasoft.testWork.model.security.Role;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 @Setter
 @Getter
@@ -46,7 +45,11 @@ public class User implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return null; //todo симпл грантед авторитиз
+        Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
+        for (Role r : role) {
+            authorities.addAll(r.getAuthorities());
+        }
+        return authorities;
     }
 
     @Override
