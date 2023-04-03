@@ -9,6 +9,7 @@ import ru.vitasoft.testWork.exception.RequestUpdateException;
 import ru.vitasoft.testWork.exception.UserAccessException;
 import ru.vitasoft.testWork.model.request.Request;
 import ru.vitasoft.testWork.model.request.RequestStatus;
+import ru.vitasoft.testWork.model.user.User;
 import ru.vitasoft.testWork.repository.RequestRepository;
 
 import java.time.LocalDateTime;
@@ -29,13 +30,39 @@ public class RequestService {
     public void sendToSubmit(Long requestId, String username) {
         Request request = requestRepository.findById(requestId).orElseThrow();
 
-        if (!Objects.equals(request.getUser(), userService.findUserByUsername(username))) {
-            throw new UserAccessException("user ".concat(username).concat(" cannot send someone else's request"));
-        }
-        if (!Objects.equals(request.getStatus(), RequestStatus.DRAFT)) {
-            throw new RequestUpdateException("request №".concat(requestId.toString()).concat(" status is not DRAFT"));
-        }
+        checkThatUserIsOwnerOfRequest(request.getUser(), userService.findUserByUsername(username));
+        checkThatRequestStatusIsDraft(request);
         request.setStatus(RequestStatus.POSTED);
         requestRepository.save(request);
+    }
+
+    public RequestDtoOut editRequest(RequestDtoIn updatedRequest, Long requestId, String username) {
+        Request requestFromBase = requestRepository.findById(requestId).orElseThrow();
+
+        checkThatUserIsOwnerOfRequest(updatedRequest.getUser(), userService.findUserByUsername(username));
+        checkThatRequestStatusIsDraft(requestFromBase);
+        return RequestMapper.toRequestDtoOut(requestRepository.save(updateRequest(requestFromBase, updatedRequest)));
+    }
+
+    private Request updateRequest(Request requestFromBase, RequestDtoIn updatedRequest) {
+        if (updatedRequest.getText() != null && !updatedRequest.getText().isBlank()) {
+            requestFromBase.setText(updatedRequest.getText());
+        } else {
+            throw new RequestUpdateException(String.format("Text in request %s can't be empty!", requestFromBase.getId()));
+        }
+        return requestFromBase;
+    }
+
+    private void checkThatUserIsOwnerOfRequest(User userFromRequest, User userFromController) {
+        if (!Objects.equals(userFromRequest, userFromController)) {
+            throw new UserAccessException("user ".concat(userFromController.getUsername())
+                    .concat(" cannot do something with this request"));
+        }
+    }
+
+    private void checkThatRequestStatusIsDraft(Request request) {
+        if (!Objects.equals(request.getStatus(), RequestStatus.DRAFT)) {
+            throw new RequestUpdateException(String.format("request № %s status is not DRAFT", request.getId()));
+        }
     }
 }

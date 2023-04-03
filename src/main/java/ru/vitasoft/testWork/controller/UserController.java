@@ -38,4 +38,13 @@ public class UserController {
         log.debug("sending request №{} to submit", requestId);
         requestService.sendToSubmit(requestId, user.getUsername());
     }
+
+    @PutMapping("/edit/{requestId}")
+    //@PreAuthorize()
+    @ResponseStatus(HttpStatus.OK)
+    public RequestDtoOut editRequest(@Valid @RequestBody RequestDtoIn request,
+                                     @AuthenticationPrincipal User user, @PathVariable Long requestId) {
+        log.debug("edit request №{}", requestId);
+        return requestService.editRequest(request, requestId, user.getUsername());
+    }
 }
