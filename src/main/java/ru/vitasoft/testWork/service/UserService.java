@@ -28,7 +28,7 @@ public class UserService {
 
     public User setRoleToUser(Long userId, Role role) {
         User user = userRepository.findById(userId).orElseThrow();
-        Set<Role> roles = user.getRole();
+        Set<Role> roles = user.getRoles();
         roles.add(role);
         return userRepository.save(user);
     }

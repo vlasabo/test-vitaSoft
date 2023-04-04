@@ -15,11 +15,14 @@ import ru.vitasoft.testWork.dto.request.RequestDtoOut;
 import ru.vitasoft.testWork.exception.RequestUpdateException;
 import ru.vitasoft.testWork.exception.UserAccessException;
 import ru.vitasoft.testWork.model.request.RequestStatus;
+import ru.vitasoft.testWork.model.security.Role;
 import ru.vitasoft.testWork.model.user.User;
 import ru.vitasoft.testWork.service.RequestService;
 import ru.vitasoft.testWork.service.UserService;
 
+import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
 
 @SpringBootTest()
@@ -151,9 +154,9 @@ class TestWorkApplicationTests {
 
         requestService.addRequest(requestDtoIn, "user");
         var pageRequests = requestService.getAllForUser("user", false, 0);
-        Assertions.assertEquals(pageRequests.getSize(), 1);
+        Assertions.assertEquals(1, pageRequests.getSize());
         Assertions.assertTrue(pageRequests.get().findFirst().isPresent());
-        Assertions.assertEquals(pageRequests.get().findFirst().get().getText(), "text");
+        Assertions.assertEquals("text", pageRequests.get().findFirst().get().getText());
     }
 
     @Test
@@ -168,21 +171,20 @@ class TestWorkApplicationTests {
         String expectedText = "М-н-е- -н-у-ж-н-а- -п-о-м-о-щ-ь";
 
         var pageRequests = operatorController.getUserRequests(false, 0, "user");
-        Assertions.assertEquals(pageRequests.get().findFirst().get().getText(), expectedText);
+        Assertions.assertEquals(expectedText, pageRequests.get().findFirst().get().getText());
         pageRequests = operatorController.getAllRequests(false, 0);
-        Assertions.assertEquals(pageRequests.get().findFirst().get().getText(), expectedText);
+        Assertions.assertEquals(expectedText, pageRequests.get().findFirst().get().getText());
         RequestDtoOut requestDtoOut = operatorController.getRequest(1L);
-        Assertions.assertEquals(requestDtoOut.getText(), expectedText);
+        Assertions.assertEquals(expectedText, requestDtoOut.getText());
 
         operatorController.acceptRequest(1L);
         pageRequests = operatorController.getUserRequests(false, 0, "user");
-        Assertions.assertEquals(pageRequests.getSize(), 0); //оператор не видит заявку в статусе принята
-        Assertions.assertEquals(
+        Assertions.assertEquals(0, pageRequests.getSize()); //оператор не видит заявку в статусе принята
+        Assertions.assertEquals(RequestStatus.ACCEPTED,
                 userController.getUserRequests( //пользователь видит
                         true,
                         0,
-                        getUser()).get().findFirst().get().getStatus(),
-                RequestStatus.ACCEPTED);
+                        getUser()).get().findFirst().get().getStatus());
 
         RequestDtoIn requestDtoIn2 = new RequestDtoIn();
         requestDtoIn2.setUser(getUser());
@@ -190,12 +192,11 @@ class TestWorkApplicationTests {
         userController.addRequest(requestDtoIn2, getUser());
         requestService.sendToSubmit(2L, "user");
         operatorController.rejectRequest(2L);
-        Assertions.assertEquals(
+        Assertions.assertEquals(RequestStatus.REJECTED,
                 userController.getUserRequests( //пользователь видит
                         true,
                         0,
-                        getUser()).get().findFirst().get().getStatus(),
-                RequestStatus.REJECTED);
+                        getUser()).get().findFirst().get().getStatus());
     }
 
     @Test
@@ -209,7 +210,7 @@ class TestWorkApplicationTests {
         requestDtoIn.setText("не надо уже ничего");
         userController.editRequest(requestDtoIn, 1L, getUser());
         var requestDto = userController.getUserRequests(false, 0, getUser()).get().findFirst().get();
-        Assertions.assertEquals(requestDto.getText(), "не надо уже ничего");
+        Assertions.assertEquals("не надо уже ничего", requestDto.getText());
 
         Assertions.assertThrows(UserAccessException.class, //не тот пользователь
                 () -> userController.editRequest(requestDtoIn, 1L, userService.findUserByUsername("admin")));
@@ -218,6 +219,31 @@ class TestWorkApplicationTests {
         requestDto.setText("всё-таки надо");
         Assertions.assertThrows(RequestUpdateException.class, //не тот статус заявки
                 () -> userController.editRequest(requestDtoIn, 1L, getUser()));
+    }
+
+
+    @Test
+    @WithMockUser(username = "admin", authorities = {"ADMIN"})
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
+    void getAllUsers() {
+        Assertions.assertEquals(3, administratorController.getUsers().size());
+    }
+
+    @Test
+    @WithMockUser(username = "admin", authorities = {"ADMIN"})
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
+    void setRoleToUser() {
+        User user = getUser();
+        Set<Role> roles = user.getRoles();
+        Assertions.assertEquals(1, roles.size());
+        Assertions.assertTrue(roles.contains(Role.USER));
+
+        administratorController.setRoleToUser(user.getId());
+        List<User> usersFromBase = administratorController.getUserByUsername("user");
+        Assertions.assertEquals(1, usersFromBase.size());
+        roles = usersFromBase.get(0).getRoles();
+        Assertions.assertEquals(2, roles.size());
+        Assertions.assertTrue(roles.contains(Role.USER) && roles.contains(Role.OPERATOR));
     }
 
     private User getUser() {
