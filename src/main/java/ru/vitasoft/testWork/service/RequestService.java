@@ -99,7 +99,8 @@ public class RequestService {
         List<User> users = userService.findUserByPartOfUsername(username);
         if (users.size() == 0) {
             throw new IllegalArgumentException("zero users find by part of username " + username);
-        } else if (users.size() > 1) {
+        }
+        if (users.size() > 1) {
             throw new IllegalArgumentException("too many users find by part of username " + username);
         }
 
