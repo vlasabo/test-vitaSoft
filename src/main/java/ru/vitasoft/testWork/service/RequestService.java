@@ -34,14 +34,13 @@ public class RequestService {
     public RequestDtoOut addRequest(RequestDtoIn requestDto, String username) {
         requestDto.setCreationDate(LocalDateTime.now());
         requestDto.setUser(userService.findUserByUsername(username));
-        requestDto.setStatus(RequestStatus.DRAFT.toString());
-        return requestMapper.toRequestDtoOut(requestRepository.save(requestMapper.toRequest(requestDto)));
+        return requestMapper.toRequestDtoOut(requestRepository.save(requestMapper.toNewRequest(requestDto)));
     }
 
     public void sendToSubmit(Long requestId, String username) {
         Request request = requestRepository.findById(requestId).orElseThrow();
 
-        checkThatUserIsOwnerOfRequest(request.getUser(), userService.findUserByUsername(username));
+        checkThatUserIsOwnerOfRequest(requestRepository.getWithUser(requestId).getUser(), userService.findUserByUsername(username));
         checkThatRequestStatusIsDraft(request);
         request.setStatus(RequestStatus.POSTED);
         requestRepository.save(request);
@@ -50,7 +49,7 @@ public class RequestService {
     public RequestDtoOut editRequest(RequestDtoIn updatedRequest, Long requestId, String username) {
         Request requestFromBase = requestRepository.findById(requestId).orElseThrow();
 
-        checkThatUserIsOwnerOfRequest(updatedRequest.getUser(), userService.findUserByUsername(username));
+        checkThatUserIsOwnerOfRequest(requestRepository.getWithUser(requestId).getUser(), userService.findUserByUsername(username));
         checkThatRequestStatusIsDraft(requestFromBase);
         return requestMapper.toRequestDtoOut(requestRepository.save(updateRequest(requestFromBase, updatedRequest)));
     }
@@ -79,7 +78,7 @@ public class RequestService {
     public Page<RequestDtoOut> getAllForOperator(Boolean dateDirection, Integer paginationFrom) {
         Sort sort = getSort(dateDirection);
         PageRequest pageRequest = PageRequest.of(paginationFrom, PAGINATION_SIZE, sort);
-        Page<Request> requestsPage = requestRepository.findAllByStatusIs(pageRequest, RequestStatus.POSTED.toString());
+        Page<Request> requestsPage = requestRepository.findAllByStatusIs(pageRequest, RequestStatus.POSTED);
 
         List<RequestDtoOut> resultList = getRequestDtoOutsForOperator(requestsPage);
         return new PageImpl<>(resultList);
@@ -109,7 +108,7 @@ public class RequestService {
         Sort sort = getSort(dateDirection);
         PageRequest pageRequest = PageRequest.of(paginationFrom, PAGINATION_SIZE, sort);
         Page<Request> requestsPage =
-                requestRepository.findAllByStatusIsAndUserIdIs(pageRequest, RequestStatus.POSTED.toString(), user.getId());
+                requestRepository.findAllByStatusIsAndUserIdIs(pageRequest, RequestStatus.POSTED, user.getId());
 
         List<RequestDtoOut> resultList = getRequestDtoOutsForOperator(requestsPage);
         return new PageImpl<>(resultList);
@@ -137,7 +136,7 @@ public class RequestService {
     private String setTextToOperator(String text) {
         StringJoiner stringJoiner = new StringJoiner("-");
         Arrays.stream(text.split(""))
-                .forEach(stringJoiner::add);
+                .forEachOrdered(stringJoiner::add);
         return stringJoiner.toString();
     }
 

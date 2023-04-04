@@ -13,9 +13,9 @@ import ru.vitasoft.testWork.repository.RequestRepository;
 public class RequestMapper {
     private final RequestRepository requestRepository;
 
-    public Request toRequest(RequestDtoIn requestDtoIn) {
+    public Request toNewRequest(RequestDtoIn requestDtoIn) {
         return new Request(
-                RequestStatus.valueOf(requestDtoIn.getStatus()),
+                RequestStatus.DRAFT,
                 requestDtoIn.getText(),
                 requestDtoIn.getCreationDate(),
                 requestDtoIn.getUser()

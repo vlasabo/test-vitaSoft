@@ -14,8 +14,6 @@ import java.time.LocalDateTime;
 public class RequestDtoIn {
 
     @NotBlank
-    private String status;
-    @NotBlank
     private String text;
     private LocalDateTime creationDate;
     private User user;
