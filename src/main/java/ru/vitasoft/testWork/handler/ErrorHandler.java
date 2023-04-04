@@ -1,7 +1,7 @@
 package ru.vitasoft.testWork.handler;
 
-import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -9,12 +9,13 @@ import ru.vitasoft.testWork.exception.RequestUpdateException;
 import ru.vitasoft.testWork.exception.UserAccessException;
 
 import java.time.LocalDateTime;
+import java.util.NoSuchElementException;
 
 @RestControllerAdvice
 public class ErrorHandler {
-    @ExceptionHandler(ChangeSetPersister.NotFoundException.class)
+    @ExceptionHandler(NoSuchElementException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ErrorResponse handle(ChangeSetPersister.NotFoundException e) {
+    public ErrorResponse handle(NoSuchElementException e) {
         return new ErrorResponse(
                 e.getMessage(),
                 LocalDateTime.now(),
@@ -39,6 +40,16 @@ public class ErrorHandler {
                 e.getMessage(),
                 LocalDateTime.now(),
                 HttpStatus.CONFLICT.getReasonPhrase()
+        );
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ErrorResponse handle(AccessDeniedException e) {
+        return new ErrorResponse(
+                e.getMessage(),
+                LocalDateTime.now(),
+                HttpStatus.FORBIDDEN.getReasonPhrase()
         );
     }
 }

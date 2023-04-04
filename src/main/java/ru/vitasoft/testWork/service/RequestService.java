@@ -29,12 +29,13 @@ public class RequestService {
     private static final int PAGINATION_SIZE = 5;
     private final RequestRepository requestRepository;
     private final UserService userService;
+    private final RequestMapper requestMapper;
 
     public RequestDtoOut addRequest(RequestDtoIn requestDto, String username) {
         requestDto.setCreationDate(LocalDateTime.now());
         requestDto.setUser(userService.findUserByUsername(username));
         requestDto.setStatus(RequestStatus.DRAFT.toString());
-        return RequestMapper.toRequestDtoOut(requestRepository.save(RequestMapper.toRequest(requestDto)));
+        return requestMapper.toRequestDtoOut(requestRepository.save(requestMapper.toRequest(requestDto)));
     }
 
     public void sendToSubmit(Long requestId, String username) {
@@ -51,7 +52,7 @@ public class RequestService {
 
         checkThatUserIsOwnerOfRequest(updatedRequest.getUser(), userService.findUserByUsername(username));
         checkThatRequestStatusIsDraft(requestFromBase);
-        return RequestMapper.toRequestDtoOut(requestRepository.save(updateRequest(requestFromBase, updatedRequest)));
+        return requestMapper.toRequestDtoOut(requestRepository.save(updateRequest(requestFromBase, updatedRequest)));
     }
 
     public Page<RequestDtoOut> getAllForUser(String username, Boolean dateDirection, Integer paginationFrom) {
@@ -61,7 +62,7 @@ public class RequestService {
         Page<Request> requestsPage = requestRepository.findAllByUserIdIs(userId, pageRequest);
 
         var resultList = requestsPage.stream()
-                .map(RequestMapper::toRequestDtoOut)
+                .map(requestMapper::toRequestDtoOut)
                 .collect(Collectors.toList());
         return new PageImpl<>(resultList);
     }
@@ -72,7 +73,7 @@ public class RequestService {
             throw new UserAccessException("attempt to view a request which status is not POSTED!");
         }
         request.setText(setTextToOperator(request.getText()));
-        return RequestMapper.toRequestDtoOut(request);
+        return requestMapper.toRequestDtoOut(request);
     }
 
     public Page<RequestDtoOut> getAllForOperator(Boolean dateDirection, Integer paginationFrom) {
@@ -116,7 +117,7 @@ public class RequestService {
 
     private List<RequestDtoOut> getRequestDtoOutsForOperator(Page<Request> requestsPage) {
         var resultList = requestsPage.stream()
-                .map(RequestMapper::toRequestDtoOut)
+                .map(requestMapper::toRequestDtoOut)
                 .collect(Collectors.toList());
         resultList.forEach(requestDtoOut ->
                 requestDtoOut.setText(setTextToOperator(requestDtoOut.getText())));
