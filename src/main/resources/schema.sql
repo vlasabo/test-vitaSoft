@@ -1,7 +1,3 @@
-drop table if exists roles;
-drop table if exists requests;
-drop table if exists users;
-
 
 CREATE TABLE IF NOT EXISTS users
 (
