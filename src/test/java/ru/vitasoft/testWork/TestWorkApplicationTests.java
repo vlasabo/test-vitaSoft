@@ -46,7 +46,6 @@ class TestWorkApplicationTests {
     //AdministratorController
     @Test
     @WithMockUser(username = "user", authorities = {"USER"})
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
     void userAccessDeniedToAdministratorController() {
         Assertions.assertThrows(org.springframework.security.access.AccessDeniedException.class,
                 () -> administratorController.getUsers());
@@ -54,7 +53,6 @@ class TestWorkApplicationTests {
 
     @Test
     @WithMockUser(username = "user", authorities = {"OPERATOR"})
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
     void operatorAccessDeniedToAdministratorController() {
         Assertions.assertThrows(org.springframework.security.access.AccessDeniedException.class,
                 () -> administratorController.getUsers());
@@ -62,7 +60,6 @@ class TestWorkApplicationTests {
 
     @Test
     @WithMockUser(username = "admin", authorities = {"ADMIN"})
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
     void adminAccessGrantedToAdministratorController() {
         Assertions.assertDoesNotThrow(() -> administratorController.getUsers());
     }
@@ -70,7 +67,6 @@ class TestWorkApplicationTests {
     //OperatorController
     @Test
     @WithMockUser(username = "user", authorities = {"USER"})
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
     void userAccessDeniedToOperatorController() {
         Assertions.assertThrows(org.springframework.security.access.AccessDeniedException.class,
                 () -> operatorController.getRequest(1L));
@@ -86,7 +82,6 @@ class TestWorkApplicationTests {
 
     @Test
     @WithMockUser(username = "admin", authorities = {"ADMIN"})
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
     void adminAccessDeniedToOperatorController() {
         Assertions.assertThrows(org.springframework.security.access.AccessDeniedException.class,
                 () -> operatorController.getRequest(1L));
@@ -95,14 +90,12 @@ class TestWorkApplicationTests {
     //UserController
     @Test
     @WithMockUser(username = "user", authorities = {"USER"})
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
     void userAccessGrantedToUserController() {
         Assertions.assertDoesNotThrow(() -> userController.getUserRequests(true, 0, getUser()));
     }
 
     @Test
     @WithMockUser(username = "operator", authorities = {"OPERATOR"})
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
     void operatorAccessDeniedToUserController() {
         Assertions.assertThrows(org.springframework.security.access.AccessDeniedException.class,
                 () -> userController.getUserRequests(true, 0, userService.findUserByUsername("operator")));
@@ -110,7 +103,6 @@ class TestWorkApplicationTests {
 
     @Test
     @WithMockUser(username = "admin", authorities = {"ADMIN"})
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
     void adminAccessDeniedToUserController() {
         Assertions.assertThrows(org.springframework.security.access.AccessDeniedException.class,
                 () -> userController.getUserRequests(true, 0, userService.findUserByUsername("admin")));
@@ -120,7 +112,6 @@ class TestWorkApplicationTests {
     //AdministratorController
     @Test
     @WithMockUser(username = "username", authorities = {"USER", "OPERATOR", "ADMIN"})
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
     void manyAuthoritiesAccessGrantedToAdministratorController() {
         Assertions.assertDoesNotThrow(() -> administratorController.getUsers());
     }
@@ -137,7 +128,6 @@ class TestWorkApplicationTests {
     //UserController
     @Test
     @WithMockUser(username = "username", authorities = {"USER", "OPERATOR", "ADMIN"})
-    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
     void manyAuthoritiesAccessGrantedToUserController() {
         Assertions.assertDoesNotThrow(() -> userController.getUserRequests(true, 0, getUser()));
     }
@@ -148,9 +138,7 @@ class TestWorkApplicationTests {
     @WithMockUser(username = "user", authorities = {"USER"})
     @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
     void addCorrectRequest() {
-        RequestDtoIn requestDtoIn = new RequestDtoIn();
-        requestDtoIn.setUser(getUser());
-        requestDtoIn.setText("text");
+        RequestDtoIn requestDtoIn = getRequestDtoIn("text");
 
         requestService.addRequest(requestDtoIn, "user");
         var pageRequests = requestService.getAllForUser("user", false, 0);
@@ -163,9 +151,7 @@ class TestWorkApplicationTests {
     @WithMockUser(username = "operator", authorities = {"USER", "OPERATOR"})
     @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
     void setRequestAsPostedAsUserAndGetTextFromRequestAsOperatorAndAcceptRequestAndRejectRequest() {
-        RequestDtoIn requestDtoIn = new RequestDtoIn();
-        requestDtoIn.setUser(getUser());
-        requestDtoIn.setText("Мне нужна помощь");
+        RequestDtoIn requestDtoIn = getRequestDtoIn("Мне нужна помощь");
         requestService.addRequest(requestDtoIn, "user");
         userController.sendToSubmit(1L, getUser());
         String expectedText = "М-н-е- -н-у-ж-н-а- -п-о-м-о-щ-ь";
@@ -185,27 +171,29 @@ class TestWorkApplicationTests {
                         true,
                         0,
                         getUser()).get().findFirst().get().getStatus());
+    }
 
-        RequestDtoIn requestDtoIn2 = new RequestDtoIn();
-        requestDtoIn2.setUser(getUser());
-        requestDtoIn2.setText("Мне нужна помощь");
-        userController.addRequest(requestDtoIn2, getUser());
-        requestService.sendToSubmit(2L, "user");
-        operatorController.rejectRequest(2L);
+    @Test
+    @WithMockUser(username = "operator", authorities = {"USER", "OPERATOR"})
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
+    void setRequestAsPostedAsUserAndRejectRequest() {
+        RequestDtoIn requestDtoIn = getRequestDtoIn("Мне нужна помощь");
+        userController.addRequest(requestDtoIn, getUser());
+        requestService.sendToSubmit(1L, "user");
+        operatorController.rejectRequest(1L);
         Assertions.assertEquals(RequestStatus.REJECTED,
-                userController.getUserRequests( //пользователь видит
+                userController.getUserRequests(
                         true,
                         0,
                         getUser()).get().findFirst().get().getStatus());
     }
 
+
     @Test
     @WithMockUser(username = "user", authorities = {"USER"})
     @DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
     void correctEditUserRequestAndTryToChangeStatusAndEdit() {
-        RequestDtoIn requestDtoIn = new RequestDtoIn();
-        requestDtoIn.setUser(getUser());
-        requestDtoIn.setText("Мне нужна помощь");
+        RequestDtoIn requestDtoIn = getRequestDtoIn("Мне нужна помощь");
         requestService.addRequest(requestDtoIn, "user");
         requestDtoIn.setText("не надо уже ничего");
         userController.editRequest(requestDtoIn, 1L, getUser());
@@ -246,7 +234,15 @@ class TestWorkApplicationTests {
         Assertions.assertTrue(roles.contains(Role.USER) && roles.contains(Role.OPERATOR));
     }
 
+    private RequestDtoIn getRequestDtoIn(String text) {
+        RequestDtoIn requestDtoIn = new RequestDtoIn();
+        requestDtoIn.setUser(getUser());
+        requestDtoIn.setText(text);
+        return requestDtoIn;
+    }
+
     private User getUser() {
         return userService.findUserByUsername("user");
     }
+
 }
